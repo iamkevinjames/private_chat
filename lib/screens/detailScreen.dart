@@ -4,13 +4,13 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:private_chat/local_db/chat_message.dart';
 import 'package:private_chat/models/chat_message.dart';
-import 'package:private_chat/models/user.dart';
 import 'package:private_chat/services/api_service.dart';
 
 class DetailScreen extends StatefulWidget {
   final String name;
   final int id;
   final String? userId;
+
   const DetailScreen({
     super.key,
     required this.name,
@@ -26,10 +26,9 @@ class _DetailScreenState extends State<DetailScreen> {
   final msgController = TextEditingController();
 
   void sendMessage() async {
-    print('Sending message from userId: ${widget.id}');
     final msg = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: widget.id.toString(), // from Supabase session
+      senderId: widget.id.toString(),
       content: msgController.text.trim(),
       timestamp: DateTime.now(),
     );
@@ -43,60 +42,23 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.name),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
         ),
-        actions: [IconButton(onPressed: (clearChat), icon: Icon(Icons.delete))],
+        actions: [
+          IconButton(onPressed: clearChat, icon: const Icon(Icons.delete)),
+        ],
       ),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Expanded(
-            //   child: Padding(
-            //     padding: EdgeInsetsGeometry.symmetric(
-            //       horizontal: 12,
-            //       vertical: 4,
-            //     ),
-            //     child: SingleChildScrollView(
-            // child: FutureBuilder<UserDetails>(
-            //   future: userDetails,
-            //   builder: (context, snapshot) {
-            //     if (snapshot.connectionState == ConnectionState.waiting) {
-            //       return Center(child: CircularProgressIndicator());
-            //     }
-            //     if (snapshot.hasError) {
-            //       return Center(child: Text("Error: ${snapshot.error}"));
-            //     }
-
-            //     final data = snapshot.data!;
-            //     return Column(
-            //       crossAxisAlignment: CrossAxisAlignment.start,
-            //       children: [
-            //         Text(data.address.street),
-            //         Text(data.address.city),
-            //         Text(data.address.zipcode),
-            //         Text("Phone: ${data.phone}"),
-            //       ],
-            //     );
-            //   },
-            // ),
-            //     ),
-            //   ),
-            // ),
+            // ---------------- MESSAGES LIST ----------------
             Expanded(
               child: ValueListenableBuilder(
                 valueListenable: Hive.box<ChatMessage>('messages').listenable(),
@@ -104,61 +66,126 @@ class _DetailScreenState extends State<DetailScreen> {
                   var messages = box.values
                       .where((m) => m.senderId == widget.id.toString())
                       .toList();
+
                   if (messages.isEmpty) {
-                    return Center(
+                    return const Center(
                       child: Text("No messages yet. Start the conversation!"),
                     );
                   }
+
+                  messages.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
                   return ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 10,
+                      horizontal: 10,
+                    ),
                     itemCount: messages.length,
                     itemBuilder: (_, index) {
                       final msg = messages[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12.0,
-                          vertical: 6.0,
-                        ),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 1,
-                                blurRadius: 3,
-                                offset: Offset(0, 2),
+
+                      // YOU SAID NOT TO EDIT LOGIC → SO KEEPING isMe = true always
+                      bool isMe = true;
+
+                      final bubbleColor = isMe
+                          ? const Color.fromARGB(255, 114, 220, 120)
+                          : Colors.grey.shade200;
+
+                      final textColor = isMe ? Colors.white : Colors.black87;
+
+                      const radius = Radius.circular(16);
+                      final bubbleRadius = BorderRadius.only(
+                        topLeft: radius,
+                        topRight: radius,
+                        bottomLeft: isMe ? radius : const Radius.circular(4),
+                        bottomRight: isMe ? const Radius.circular(4) : radius,
+                      );
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.end, // RIGHT SIDE
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
                               ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(1),
-                            child: ListTile(
-                              title: Text(msg.content),
-                              subtitle: Text(
-                                DateFormat('hh:mm a').format(msg.timestamp),
+                              decoration: BoxDecoration(
+                                color: bubbleColor,
+                                borderRadius: bubbleRadius,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color.fromARGB(
+                                      255,
+                                      25,
+                                      141,
+                                      195,
+                                    ).withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    msg.content,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        DateFormat(
+                                          'hh:mm a',
+                                        ).format(msg.timestamp),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: textColor.withOpacity(0.8),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                        ),
+                        ],
                       );
                     },
                   );
                 },
               ),
             ),
+
+            // ---------------- INPUT FIELD ----------------
             Padding(
-              padding: EdgeInsets.only(left: 8, right: 8, top: 4),
+              padding: const EdgeInsets.only(
+                left: 8,
+                right: 8,
+                top: 4,
+                bottom: 8,
+              ),
               child: TextField(
+                controller: msgController,
                 decoration: InputDecoration(
                   hintText: "Type your message",
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   suffixIcon: IconButton(
-                    icon: Icon(Icons.send),
-                    onPressed: () => sendMessage(),
+                    icon: const Icon(Icons.send),
+                    onPressed: sendMessage,
                   ),
                 ),
-                controller: msgController,
               ),
             ),
           ],
