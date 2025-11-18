@@ -6,7 +6,7 @@ import 'package:private_chat/services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? userId;
-  const HomeScreen(this.userId, {super.key});
+  const HomeScreen({super.key, this.userId});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(height: 20),
-            Expanded(child: UserScreen(widget.userId ?? '')),
+            Expanded(child: UserScreen(userId: widget.userId ?? '')),
           ],
         ),
       ),

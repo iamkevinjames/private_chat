@@ -5,7 +5,7 @@ import 'package:private_chat/services/api_service.dart';
 
 class UserScreen extends StatefulWidget {
   final String? userId;
-  const UserScreen(this.userId, {super.key});
+  const UserScreen({super.key, this.userId});
 
   @override
   _UserScreenState createState() => _UserScreenState();
@@ -44,20 +44,20 @@ class _UserScreenState extends State<UserScreen> {
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final user = data[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        child: Card(
-                          elevation: 3,
-                          shadowColor: Colors.grey.withOpacity(0.3),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      return ListTile(
+                        title: Text(user.name),
+                        subtitle: Text(user.email),
+                        leading: CircleAvatar(child: Text(user.id.toString())),
+                        trailing: Icon(Icons.arrow_forward),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => DetailScreen(
+                                name: user.name,
+                                id: user.id,
+                                userId: widget.userId,
+                              ),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16,
