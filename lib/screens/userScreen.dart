@@ -5,7 +5,7 @@ import 'package:private_chat/services/api_service.dart';
 
 class UserScreen extends StatefulWidget {
   final String? userId;
-  const UserScreen(this.userId, {super.key});
+  const UserScreen({super.key, this.userId});
 
   @override
   _UserScreenState createState() => _UserScreenState();
@@ -53,8 +53,11 @@ class _UserScreenState extends State<UserScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  DetailScreen(name: user.name, id: user.id),
+                              builder: (_) => DetailScreen(
+                                name: user.name,
+                                id: user.id,
+                                userId: widget.userId,
+                              ),
                             ),
                           );
                         },
