@@ -40,7 +40,7 @@ class _UserScreenState extends State<UserScreen> {
                 children: [
                   ListView.builder(
                     shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: data.length,
                     itemBuilder: (context, index) {
                       final user = data[index];
@@ -59,8 +59,60 @@ class _UserScreenState extends State<UserScreen> {
                                 userId: widget.userId,
                               ),
                             ),
-                          );
-                        },
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            leading: CircleAvatar(
+                              radius: 25,
+                              backgroundColor: Colors.blueAccent.shade100,
+                              child: Text(
+                                user.name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              user.name,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              user.email,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            trailing: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 18,
+                                color: Colors.blueAccent,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => DetailScreen(
+                                    name: user.name,
+                                    id: user.id,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       );
                     },
                   ),
