@@ -2,11 +2,22 @@ class Users {
   final int id;
   final String name;
   final String email;
+  final String userId;
 
-  Users({required this.id, required this.name, required this.email});
+  Users({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.userId,
+  });
 
   factory Users.fromJson(Map<String, dynamic> json) {
-    return Users(id: json['id'], name: json['name'], email: json['email']);
+    return Users(
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+      userId: json['userId'],
+    );
   }
 }
 
@@ -18,6 +29,7 @@ class UserDetails {
   final Address address;
   final String phone;
   final String website;
+  final String userId;
 
   UserDetails({
     required this.id,
@@ -27,6 +39,7 @@ class UserDetails {
     required this.address,
     required this.phone,
     required this.website,
+    required this.userId,
   });
 
   factory UserDetails.fromJson(dynamic json) {
@@ -38,6 +51,7 @@ class UserDetails {
       address: Address.fromJson(json['address']), // ✅ fix
       phone: json['phone'],
       website: json['website'],
+      userId: json['userId'],
     );
   }
 }
@@ -88,6 +102,29 @@ class Company {
       name: json['name'],
       catchPhrase: json['catchPhrase'],
       bs: json['bs'],
+    );
+  }
+}
+
+class Messages {
+  final String senderId;
+  final String receiverId;
+  final String content;
+  final DateTime created_at;
+
+  Messages({
+    required this.senderId,
+    required this.receiverId,
+    required this.content,
+    required this.created_at,
+  });
+
+  factory Messages.fromJson(dynamic json) {
+    return Messages(
+      senderId: json['senderId'],
+      receiverId: json['receiverId'],
+      content: json['content'],
+      created_at: DateTime.parse(json['created_at']),
     );
   }
 }
