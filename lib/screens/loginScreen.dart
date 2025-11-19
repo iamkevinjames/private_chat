@@ -1,7 +1,10 @@
+// // // login_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:private_chat/screens/homeScreen.dart';
-import 'package:private_chat/screens/register_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'homeScreen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,47 +16,95 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-
-  bool isLoading = false;
-
   final supabase = Supabase.instance.client;
+  bool isLoading = false;
 
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      showMessage("Email & Password required");
+      showMessage('Email & Password required');
       return;
     }
 
-    try {
-      setState(() => isLoading = true);
+    setState(() => isLoading = true);
 
+    try {
       final res = await supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
-      showMessage(res.user?.id ?? "No user ID returned");
 
-      // If we reach here → login success
-      showMessage("Login successful!");
-      print('LoginScreen-user id:');
-      print(res.user!.id);
-      // Navigate to home
+      final user = res.user;
+      if (user == null) {
+        showMessage('Login failed — no user returned');
+        setState(() => isLoading = false);
+        return;
+      }
+
+      // Apply any pending profile saved at registration time
+      await _applyPendingProfile(user.id);
+
+      // Optionally ensure a minimal app_users row exists (if you disabled trigger)
+      // final check = await supabase.from('app_users').select('id').eq('userId', user.id).maybeSingle();
+      // if (check == null) { ... upsert ... }
+
+      showMessage('Login successful!');
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomeScreen(userId: res.user!.id)),
+        MaterialPageRoute(builder: (_) => HomeScreen(userId: user.id)),
       );
     } catch (e) {
-      showMessage(e.toString());
+      showMessage('Login error: $e');
     } finally {
       setState(() => isLoading = false);
     }
   }
 
+  Future<void> _applyPendingProfile(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getString('pending_profile');
+    if (pending == null) return;
+
+    Map<String, dynamic> payload;
+    try {
+      payload = jsonDecode(pending) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Failed to parse pending profile: $e');
+      return;
+    }
+
+    try {
+      await supabase
+          .from('app_users')
+          .upsert({
+            'userId': userId,
+            'name': payload['name'] ?? '',
+            'email': payload['email'] ?? '',
+            'username': payload['username'] ?? '',
+            'phone': payload['phone'] ?? '',
+            'website': payload['website'] ?? '',
+          }, onConflict: 'userId')
+          .select()
+          .maybeSingle();
+
+      // clear pending profile after successful upsert
+      prefs.remove('pending_profile');
+    } catch (e) {
+      debugPrint('Failed to upsert pending profile after login: $e');
+    }
+  }
+
   void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -73,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               TextField(
                 controller: emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: "Email",
                   border: OutlineInputBorder(),
@@ -91,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 30),
+
               TextButton(
                 onPressed: () {
                   Navigator.push(
@@ -100,6 +153,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 },
                 child: const Text("Don't have an account? Register"),
               ),
+
+              const SizedBox(height: 12),
 
               isLoading
                   ? const CircularProgressIndicator()

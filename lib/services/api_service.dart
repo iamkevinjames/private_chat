@@ -11,13 +11,30 @@ class ApiService {
   Future<List<Users>> fetchUsers(String userId) async {
     try {
       print('Fetching users for userId: $userId');
-      final data = await supabase
-          .from('app_users')
-          .select('*')
-          .eq('userId', userId);
+      final data = await supabase.from('app_users').select('*');
       print('Data fetched: $data');
       final users = data.map<Users>((item) => Users.fromJson(item)).toList();
       return users;
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  Future<List<Messages>> fetchMessages(senderId, receiverId) async {
+    try {
+      final data = await supabase
+          .from('messages')
+          .select('*')
+          .or(
+            'and(senderId.eq.$senderId,receiverId.eq.$receiverId),and(senderId.eq.$receiverId,receiverId.eq.$senderId)',
+          )
+          .order('created_at', ascending: true);
+
+      final messageDetails = data
+          .map<Messages>((item) => Messages.fromJson(item))
+          .toList();
+
+      return messageDetails;
     } catch (e) {
       throw Exception(e);
     }

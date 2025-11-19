@@ -92,7 +92,7 @@ class _UserScreenState extends State<UserScreen> {
                             MaterialPageRoute(
                               builder: (_) => DetailScreen(
                                 name: user.name,
-                                id: user.id,
+                                id: user.userId,
                                 userId: widget.userId,
                               ),
                             ),

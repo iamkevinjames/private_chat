@@ -1,13 +1,21 @@
 import 'package:hive/hive.dart';
 import 'package:private_chat/models/chat_message.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 List<ChatMessage> loadMessages() {
   var box = Hive.box<ChatMessage>('messages');
   return box.values.toList();
 }
 
-Future<void> saveMessage(ChatMessage message, String id) async {
+Future<void> saveMessage(ChatMessage message, String id, String userId) async {
   var box = Hive.box<ChatMessage>('messages');
+  final supabase = Supabase.instance.client;
+  await supabase.from('messages').insert({
+    'receiverId': id,
+    'senderId': userId,
+    'content': message.content,
+    // 'timestamp': message.timestamp.toIso8601String(),
+  });
   await box.put(message.id, message);
 }
 
@@ -20,4 +28,25 @@ Future<void> clearMessage(String id) async {
   }).toList();
 
   await box.deleteAll(keysToDelete);
+}
+
+void listenToMessages(String roomId) {
+  final supabase = Supabase.instance.client;
+
+  supabase
+      .channel('messages-room-$roomId')
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'messages',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'room_id',
+          value: roomId,
+        ),
+        callback: (payload) {
+          print('New message: ${payload.newRecord}');
+        },
+      )
+      .subscribe();
 }
