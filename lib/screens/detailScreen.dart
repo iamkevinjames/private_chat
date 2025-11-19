@@ -94,9 +94,8 @@ class _DetailScreenState extends State<DetailScreen> {
                     itemCount: messagesList.length,
                     itemBuilder: (_, index) {
                       final msg = messagesList[index];
-
                       // YOU SAID NOT TO EDIT LOGIC → SO KEEPING isMe = true always
-                      bool isMe = true;
+                      bool isMe = msg.receiverId == widget.userId;
 
                       final bubbleColor = isMe
                           ? const Color.fromARGB(255, 114, 220, 120)
@@ -108,12 +107,14 @@ class _DetailScreenState extends State<DetailScreen> {
                       final bubbleRadius = BorderRadius.only(
                         topLeft: radius,
                         topRight: radius,
-                        bottomLeft: isMe ? radius : const Radius.circular(4),
-                        bottomRight: isMe ? const Radius.circular(4) : radius,
+                        bottomLeft: !isMe ? radius : const Radius.circular(4),
+                        bottomRight: !isMe ? const Radius.circular(4) : radius,
                       );
 
                       return Row(
-                        mainAxisAlignment: MainAxisAlignment.end, // RIGHT SIDE
+                        mainAxisAlignment: isMe
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.end, // RIGHT SIDE
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Flexible(

@@ -22,7 +22,6 @@ class ApiService {
 
   Future<List<Messages>> fetchMessages(senderId, receiverId) async {
     try {
-      print('Fetching messages between $senderId and $receiverId');
       final data = await supabase
           .from('messages')
           .select('*')
@@ -34,7 +33,6 @@ class ApiService {
       final messageDetails = data
           .map<Messages>((item) => Messages.fromJson(item))
           .toList();
-      print(messageDetails);
 
       return messageDetails;
     } catch (e) {

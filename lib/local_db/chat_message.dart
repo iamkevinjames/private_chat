@@ -29,3 +29,24 @@ Future<void> clearMessage(String id) async {
 
   await box.deleteAll(keysToDelete);
 }
+
+void listenToMessages(String roomId) {
+  final supabase = Supabase.instance.client;
+
+  supabase
+      .channel('messages-room-$roomId')
+      .onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'messages',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'room_id',
+          value: roomId,
+        ),
+        callback: (payload) {
+          print('New message: ${payload.newRecord}');
+        },
+      )
+      .subscribe();
+}
