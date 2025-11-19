@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:private_chat/screens/homeScreen.dart';
-import 'package:private_chat/screens/register_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'loginScreen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final supabase = Supabase.instance.client;
   bool isLoading = false;
 
-  final supabase = Supabase.instance.client;
-
-  Future<void> login() async {
+  Future<void> register() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
@@ -30,20 +28,17 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       setState(() => isLoading = true);
 
-      final res = await supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      showMessage(res.user?.id ?? "No user ID returned");
+      final res = await supabase.auth.signUp(email: email, password: password);
 
-      // If we reach here → login success
-      showMessage("Login successful!");
-      print('LoginScreen-user id:');
-      print(res.user!.id);
-      // Navigate to home
+      if (res.user == null) {
+        showMessage("Registration failed");
+        return;
+      }
+
+      showMessage("Account created! Please login.");
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomeScreen(userId: res.user!.id)),
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
     } catch (e) {
       showMessage(e.toString());
@@ -66,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
-                "Login",
+                "Register",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 30),
@@ -91,22 +86,25 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 30),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  );
-                },
-                child: const Text("Don't have an account? Register"),
-              ),
 
               isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: login,
-                      child: const Text("Login"),
+                      onPressed: register,
+                      child: const Text("Register"),
                     ),
+
+              const SizedBox(height: 20),
+
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  );
+                },
+                child: const Text("Already have an account? Login"),
+              ),
             ],
           ),
         ),
