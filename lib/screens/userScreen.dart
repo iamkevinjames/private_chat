@@ -3,7 +3,6 @@ import 'package:private_chat/local_db/chat_message.dart';
 import 'package:private_chat/models/user.dart';
 import 'package:private_chat/screens/detailScreen.dart';
 import 'package:private_chat/services/api_service.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserScreen extends StatefulWidget {
   final String? userId;
@@ -19,7 +18,7 @@ class _UserScreenState extends State<UserScreen> {
   @override
   void initState() {
     super.initState();
-    users = ApiService().fetchUsers(widget.userId ?? '');
+    users = ApiService().fetchUsers();
   }
 
   @override

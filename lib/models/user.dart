@@ -1,11 +1,9 @@
-// // lib/models/user.dart
-
 class Users {
   final int id;
-  final String name; // full name (fallback)
+  final String name;
   final String email;
-  final String? username; // optional username you want to display
-  final String userId; // auth uid stored in the DB (userId or user_id)
+  final String? username;
+  final String userId;
 
   Users({
     required this.userId,
@@ -16,32 +14,11 @@ class Users {
   });
 
   factory Users.fromJson(Map<String, dynamic> json) {
-    // Safely read id as int
-    final dynamic rawId = json['id'] ?? json['Id'];
-    final int parsedId = rawId is int ? rawId : int.parse(rawId.toString());
-
-    // Name can be stored as 'name' or 'full_name'
-    final String parsedName = (json['full_name'] ?? json['name'] ?? '')
-        .toString();
-
-    // Email may be missing in some rows; keep empty string fallback
-    final String parsedEmail = (json['email'] ?? '').toString();
-
-    // Username column might be named 'username' or 'user_name' in your table
-    final String? parsedUsername = (json['username'] ?? json['user_name'])
-        ?.toString();
-
-    // Auth uid stored in your DB might be camelCase "userId" or snake_case "user_id"
-    final String? parsedUserId = (json['userId'] ?? json['user_id'])
-        ?.toString();
-
     return Users(
-      id: parsedId,
-      name: parsedName.isNotEmpty ? parsedName : parsedEmail.split('@').first,
-      email: parsedEmail,
-      username: (parsedUsername != null && parsedUsername.isNotEmpty)
-          ? parsedUsername
-          : null,
+      id: json['id'],
+      name: json['name'],
+      email: json['email'],
+      username: json['username'] ?? '',
       userId: json['userId'],
     );
   }

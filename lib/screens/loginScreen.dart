@@ -1,7 +1,5 @@
-// // login_screen.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:private_chat/services/api_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'homeScreen.dart';
 import 'register_screen.dart';
@@ -43,12 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // Apply any pending profile saved at registration time
-      await _applyPendingProfile(user.id);
-
-      // Optionally ensure a minimal app_users row exists (if you disabled trigger)
-      // final check = await supabase.from('app_users').select('id').eq('userId', user.id).maybeSingle();
-      // if (check == null) { ... upsert ... }
+      await ApiService().applyPendingProfile(user.id);
 
       showMessage('Login successful!');
       Navigator.pushReplacement(
@@ -59,40 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
       showMessage('Login error: $e');
     } finally {
       setState(() => isLoading = false);
-    }
-  }
-
-  Future<void> _applyPendingProfile(String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    final pending = prefs.getString('pending_profile');
-    if (pending == null) return;
-
-    Map<String, dynamic> payload;
-    try {
-      payload = jsonDecode(pending) as Map<String, dynamic>;
-    } catch (e) {
-      debugPrint('Failed to parse pending profile: $e');
-      return;
-    }
-
-    try {
-      await supabase
-          .from('app_users')
-          .upsert({
-            'userId': userId,
-            'name': payload['name'] ?? '',
-            'email': payload['email'] ?? '',
-            'username': payload['username'] ?? '',
-            'phone': payload['phone'] ?? '',
-            'website': payload['website'] ?? '',
-          }, onConflict: 'userId')
-          .select()
-          .maybeSingle();
-
-      // clear pending profile after successful upsert
-      prefs.remove('pending_profile');
-    } catch (e) {
-      debugPrint('Failed to upsert pending profile after login: $e');
     }
   }
 
