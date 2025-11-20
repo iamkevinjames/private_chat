@@ -1,4 +1,5 @@
-plugins {
+// plugins {
+plugins{
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -8,15 +9,19 @@ plugins {
 android {
     namespace = "com.example.private_chat"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+
+    // Use the higher NDK required by plugins
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        // Use Java 8 compatibility for Android desugaring support
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
@@ -41,4 +46,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Add desugaring dependency so libraries that require Java 8+ APIs work on older devices
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
