@@ -10,9 +10,7 @@ class ApiService {
 
   Future<List<Users>> fetchUsers(String userId) async {
     try {
-      print('Fetching users for userId: $userId');
       final data = await supabase.from('app_users').select('*');
-      print('Data fetched: $data');
       final users = data.map<Users>((item) => Users.fromJson(item)).toList();
       return users;
     } catch (e) {
@@ -20,7 +18,11 @@ class ApiService {
     }
   }
 
-  Future<List<Messages>> fetchMessages(senderId, receiverId) async {
+  Future<List<Messages>> fetchMessages(
+    senderId,
+    receiverId,
+    loadMessage,
+  ) async {
     try {
       final data = await supabase
           .from('messages')
@@ -33,7 +35,7 @@ class ApiService {
       final messageDetails = data
           .map<Messages>((item) => Messages.fromJson(item))
           .toList();
-
+      loadMessage(messageDetails);
       return messageDetails;
     } catch (e) {
       throw Exception(e);

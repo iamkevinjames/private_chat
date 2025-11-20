@@ -6,17 +6,20 @@ import 'package:private_chat/local_db/chat_message.dart';
 import 'package:private_chat/models/chat_message.dart';
 import 'package:private_chat/models/user.dart';
 import 'package:private_chat/services/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DetailScreen extends StatefulWidget {
   final String name;
   final String id;
   final String? userId;
+  final String roomId;
 
   const DetailScreen({
     super.key,
     required this.name,
     required this.id,
     this.userId,
+    required this.roomId,
   });
 
   @override
@@ -26,6 +29,8 @@ class DetailScreen extends StatefulWidget {
 class _DetailScreenState extends State<DetailScreen> {
   final msgController = TextEditingController();
   late Future<List<Messages>> messages;
+  List<Messages> message = [];
+  RealtimeChannel? _channel;
 
   void sendMessage() async {
     final msg = ChatMessage(
@@ -46,7 +51,33 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   void initState() {
     super.initState();
-    messages = ApiService().fetchMessages(widget.userId ?? '', widget.id);
+    messages = ApiService().fetchMessages(
+      widget.userId ?? '',
+      widget.id,
+      (incomingMessage) => setState(() {
+        message = incomingMessage;
+      }),
+    );
+    _channel = listenToMessages(
+      roomId: widget.roomId,
+      currentUserId: widget.id,
+      otherUserId: widget.userId ?? '',
+      onMessageReceived: (newMessage) {
+        if (!mounted) return; // <-- guard against disposed State
+        setState(() {
+          message.add(newMessage);
+        });
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_channel != null) {
+      Supabase.instance.client.removeChannel(_channel!);
+      _channel = null;
+    }
+    super.dispose();
   }
 
   @override
@@ -68,114 +99,103 @@ class _DetailScreenState extends State<DetailScreen> {
           children: [
             // ---------------- MESSAGES LIST ----------------
             Expanded(
-              child: FutureBuilder<List<Messages>>(
-                future: messages, // Use the Future here
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Center(child: Text("Error: ${snapshot.error}"));
-                  }
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(
-                      child: Text("No messages yet. Start the conversation!"),
-                    );
-                  }
+              child: (message.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No messages yet. Start the conversation!',
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 10,
+                      ),
+                      itemCount: message.length,
+                      itemBuilder: (_, index) {
+                        final msg = message[index];
+                        // YOU SAID NOT TO EDIT LOGIC → SO KEEPING isMe = true always
+                        bool isMe = msg.receiverId == widget.userId;
 
-                  final messagesList =
-                      snapshot.data!; // Get the actual list of messages
+                        final bubbleColor = isMe
+                            ? const Color.fromARGB(255, 114, 220, 120)
+                            : Colors.grey.shade200;
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 10,
-                    ),
-                    itemCount: messagesList.length,
-                    itemBuilder: (_, index) {
-                      final msg = messagesList[index];
-                      // YOU SAID NOT TO EDIT LOGIC → SO KEEPING isMe = true always
-                      bool isMe = msg.receiverId == widget.userId;
+                        final textColor = isMe ? Colors.white : Colors.black87;
 
-                      final bubbleColor = isMe
-                          ? const Color.fromARGB(255, 114, 220, 120)
-                          : Colors.grey.shade200;
+                        const radius = Radius.circular(16);
+                        final bubbleRadius = BorderRadius.only(
+                          topLeft: radius,
+                          topRight: radius,
+                          bottomLeft: !isMe ? radius : const Radius.circular(4),
+                          bottomRight: !isMe
+                              ? const Radius.circular(4)
+                              : radius,
+                        );
 
-                      final textColor = isMe ? Colors.white : Colors.black87;
-
-                      const radius = Radius.circular(16);
-                      final bubbleRadius = BorderRadius.only(
-                        topLeft: radius,
-                        topRight: radius,
-                        bottomLeft: !isMe ? radius : const Radius.circular(4),
-                        bottomRight: !isMe ? const Radius.circular(4) : radius,
-                      );
-
-                      return Row(
-                        mainAxisAlignment: isMe
-                            ? MainAxisAlignment.start
-                            : MainAxisAlignment.end, // RIGHT SIDE
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Flexible(
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(vertical: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: bubbleColor,
-                                borderRadius: bubbleRadius,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color.fromARGB(
-                                      255,
-                                      25,
-                                      141,
-                                      195,
-                                    ).withOpacity(0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    msg.content,
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: textColor,
+                        return Row(
+                          mainAxisAlignment: isMe
+                              ? MainAxisAlignment.start
+                              : MainAxisAlignment.end, // RIGHT SIDE
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Flexible(
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: bubbleColor,
+                                  borderRadius: bubbleRadius,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color.fromARGB(
+                                        255,
+                                        25,
+                                        141,
+                                        195,
+                                      ).withOpacity(0.2),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        DateFormat(
-                                          'hh:mm a',
-                                        ).format(msg.created_at),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: textColor.withOpacity(0.8),
-                                        ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      msg.content,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: textColor,
                                       ),
-                                      const SizedBox(width: 4),
-                                    ],
-                                  ),
-                                ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          DateFormat(
+                                            'hh:mm a',
+                                          ).format(msg.created_at),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: textColor.withOpacity(0.8),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
+                          ],
+                        );
+                      },
+                    )),
 
               // ValueListenableBuilder(
               //   valueListenable: Hive.box<ChatMessage>('messages').listenable(),
