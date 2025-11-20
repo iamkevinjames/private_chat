@@ -13,7 +13,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int counter = 0; // 🔹 This is your state variable
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -31,43 +31,43 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.grey[700],
               ),
             ),
-            ElevatedButton(
-              onPressed: () async {
-                await ApiService().signOutUser();
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                );
-              },
-              child: Text("Logout"),
-            ),
           ],
         ),
         toolbarHeight: 20,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: 20),
-            Expanded(child: UserScreen(userId: widget.userId ?? '')),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'About'),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 20),
+              Expanded(child: UserScreen(userId: widget.userId ?? '')),
+            ],
+          ),
+          AboutScreen(userId: widget.userId),
         ],
+      ),
+
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
         onTap: (index) {
-          if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => AboutScreen(counter)),
-            );
-          }
+          setState(() {
+            _currentIndex = index;
+          });
         },
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            activeIcon: Icon(Icons.home_filled),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.info),
+            label: 'About',
+            activeIcon: Icon(Icons.info_outline),
+          ),
+        ],
       ),
     );
   }

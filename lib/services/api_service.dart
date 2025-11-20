@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../models/user.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,7 +13,7 @@ class ApiService {
   // 🔒 In-memory cache
   static final Map<int, UserDetails> _userDetailsCache = {};
 
-  Future<List<Users>> fetchUsers(String userId) async {
+  Future<List<Users>> fetchUsers() async {
     try {
       final data = await supabase.from('app_users').select('*');
       final users = data.map<Users>((item) => Users.fromJson(item)).toList();
@@ -42,28 +47,24 @@ class ApiService {
     }
   }
 
-  Future<UserDetails> fetchUser(int id) async {
-    // ✅ Return from cache if available
+  Future<UserDetails> fetchUser(String id) async {
     if (_userDetailsCache.containsKey(id)) {
       return _userDetailsCache[id]!;
     }
-
-    // 🟡 Otherwise, fetch from API
+    print('id di ${id.runtimeType}');
     try {
       final data = await supabase
           .from('app_users')
           .select('*, address!inner(city, street, zipcode,suite)')
-          .eq('id', id)
+          .eq('userId', id)
           .maybeSingle();
 
+      print('Raw user data: $data');
       if (data == null) {
         throw Exception('User not found');
       }
 
       final userDetails = UserDetails.fromJson(Map<String, dynamic>.from(data));
-
-      // ✅ Save to cache
-      _userDetailsCache[id] = userDetails;
 
       return userDetails;
     } catch (e) {
@@ -77,6 +78,41 @@ class ApiService {
       _userDetailsCache.clear();
     } catch (e) {
       throw Exception('Failed to load user details: $e');
+    }
+  }
+
+  Future<void> applyPendingProfile(String userId) async {
+    final supabase = Supabase.instance.client;
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getString('pending_profile');
+    if (pending == null) return;
+
+    Map<String, dynamic> payload;
+    try {
+      payload = jsonDecode(pending) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Failed to parse pending profile: $e');
+      return;
+    }
+
+    try {
+      await supabase
+          .from('app_users')
+          .upsert({
+            'userId': userId,
+            'name': payload['name'] ?? '',
+            'email': payload['email'] ?? '',
+            'username': payload['username'] ?? '',
+            'phone': payload['phone'] ?? '',
+            'website': payload['website'] ?? '',
+          }, onConflict: 'userId')
+          .select()
+          .maybeSingle();
+
+      // clear pending profile after successful upsert
+      prefs.remove('pending_profile');
+    } catch (e) {
+      debugPrint('Failed to upsert pending profile after login: $e');
     }
   }
 }
