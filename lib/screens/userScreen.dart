@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:private_chat/local_db/chat_message.dart';
 import 'package:private_chat/models/user.dart';
 import 'package:private_chat/screens/detailScreen.dart';
 import 'package:private_chat/services/api_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserScreen extends StatefulWidget {
   final String? userId;
@@ -86,7 +88,11 @@ class _UserScreenState extends State<UserScreen> {
                             color: Colors.blueAccent,
                           ),
                         ),
-                        onTap: () {
+                        onTap: () async {
+                          final roomId = await getOrCreateRoom(
+                            widget.userId!,
+                            user.userId,
+                          );
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -94,6 +100,7 @@ class _UserScreenState extends State<UserScreen> {
                                 name: user.name,
                                 id: user.userId,
                                 userId: widget.userId,
+                                roomId: roomId,
                               ),
                             ),
                           );

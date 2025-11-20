@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:private_chat/screens/homeScreen.dart';
 import 'package:private_chat/screens/loginScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,11 @@ Future<void> main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mdm91cmVucXljc3NtdGF2cXlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxOTcwMzksImV4cCI6MjA3ODc3MzAzOX0.i-zjXGrg7xVi-wBaVwgj18UfuycsIM4l_c45-TebFuk',
   );
   WidgetsFlutterBinding.ensureInitialized();
+
+  OneSignal.initialize("YOUR_ONESIGNAL_APP_ID");
+
+  // Ask permission (Android auto-granted)
+  OneSignal.Notifications.requestPermission(true);
 
   await Hive.initFlutter();
 
