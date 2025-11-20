@@ -55,7 +55,7 @@ class ApiService {
     try {
       final data = await supabase
           .from('app_users')
-          .select('*, address!inner(city, street, zipcode,suite)')
+          .select('*, address!left(city, street, zipcode, suite)')
           .eq('userId', id)
           .maybeSingle();
 
