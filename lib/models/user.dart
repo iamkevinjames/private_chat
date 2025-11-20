@@ -5,14 +5,18 @@ class Users {
   final String name; // full name (fallback)
   final String email;
   final String? username; // optional username you want to display
-  final String userId; // auth uid stored in the DB (userId or user_id)
+  final String? userId; // auth uid stored in the DB (userId or user_id)
+  final String? phone;
+  final String? website;
 
   Users({
-    required this.userId,
     required this.id,
     required this.name,
     required this.email,
     this.username,
+    this.userId,
+    this.phone,
+    this.website,
   });
 
   factory Users.fromJson(Map<String, dynamic> json) {
@@ -35,14 +39,26 @@ class Users {
     final String? parsedUserId = (json['userId'] ?? json['user_id'])
         ?.toString();
 
+    final String? parsedPhone =
+        (json['phone'] ?? json['mobile'] ?? json['phone_number'])?.toString();
+    final String? parsedWebsite = (json['website'] ?? json['url'])?.toString();
+
     return Users(
       id: parsedId,
-      name: parsedName.isNotEmpty ? parsedName : parsedEmail.split('@').first,
+      name: parsedName.isNotEmpty
+          ? parsedName
+          : (parsedEmail.isNotEmpty ? parsedEmail.split('@').first : ''),
       email: parsedEmail,
       username: (parsedUsername != null && parsedUsername.isNotEmpty)
           ? parsedUsername
           : null,
-      userId: json['userId'],
+      userId: parsedUserId,
+      phone: (parsedPhone != null && parsedPhone.isNotEmpty)
+          ? parsedPhone
+          : null,
+      website: (parsedWebsite != null && parsedWebsite.isNotEmpty)
+          ? parsedWebsite
+          : null,
     );
   }
 }
@@ -53,8 +69,8 @@ class UserDetails {
   final String username;
   final String email;
   final Address address;
-  final String phone;
-  final String website;
+  final String? phone;
+  final String? website;
   final String userId;
 
   UserDetails({
@@ -63,8 +79,8 @@ class UserDetails {
     required this.username,
     required this.email,
     required this.address,
-    required this.phone,
-    required this.website,
+    this.phone,
+    this.website,
     required this.userId,
   });
 
@@ -77,9 +93,9 @@ class UserDetails {
       username: json['username']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       address: Address.fromJson(json['address'] ?? {}),
-      phone: json['phone']?.toString() ?? '',
-      website: json['website']?.toString() ?? '',
-      userId: json['userId'],
+      phone: json['phone']?.toString(),
+      website: json['website']?.toString(),
+      userId: (json['userId'] ?? json['user_id']).toString(),
     );
   }
 }
@@ -121,11 +137,20 @@ class Messages {
   });
 
   factory Messages.fromJson(dynamic json) {
+    final createdStr = (json['created_at'] ?? json['timestamp'] ?? '')
+        .toString();
+    DateTime created;
+    try {
+      created = DateTime.parse(createdStr);
+    } catch (_) {
+      created = DateTime.now();
+    }
+
     return Messages(
-      senderId: json['senderId'],
-      receiverId: json['receiverId'],
-      content: json['content'],
-      created_at: DateTime.parse(json['created_at']),
+      senderId: (json['senderId'] ?? json['sender_id'] ?? '').toString(),
+      receiverId: (json['receiverId'] ?? json['receiver_id'] ?? '').toString(),
+      content: (json['content'] ?? '').toString(),
+      created_at: created,
     );
   }
 }

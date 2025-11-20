@@ -13,8 +13,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int counter = 0; // 🔹 This is your state variable
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,17 +28,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
                 color: Colors.grey[700],
               ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await ApiService().signOutUser();
-
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                );
-              },
-              child: Text("Logout"),
             ),
           ],
         ),
@@ -58,13 +45,13 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'About'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'About'),
         ],
         onTap: (index) {
           if (index == 1) {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => AboutScreen(counter)),
+              MaterialPageRoute(builder: (_) => AboutScreen()),
             );
           }
         },

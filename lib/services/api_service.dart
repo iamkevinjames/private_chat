@@ -8,10 +8,28 @@ class ApiService {
   // 🔒 In-memory cache
   static final Map<int, UserDetails> _userDetailsCache = {};
 
-  Future<List<Users>> fetchUsers(String userId) async {
+  Future<List<Users>> fetchUsers(String? excludeUserId) async {
     try {
-      final data = await supabase.from('app_users').select('*');
-      final users = data.map<Users>((item) => Users.fromJson(item)).toList();
+      final supa = supabase;
+
+      // Build query
+      final query = supa.from('app_users').select('*');
+
+      // If an exclude id was provided, filter it out
+      if (excludeUserId != null && excludeUserId.isNotEmpty) {
+        // note: column name in your DB is "userId" (camelCase) so we use quotes in SQL policies,
+        // but here the supabase client accepts the literal column name:
+        query.neq('userId', excludeUserId);
+      }
+
+      final data = await query;
+
+      if (data == null) return [];
+
+      final users = (data as List<dynamic>)
+          .map<Users>((item) => Users.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
+
       return users;
     } catch (e) {
       throw Exception(e);

@@ -90,17 +90,18 @@ class _UserScreenState extends State<UserScreen> {
                         ),
                         onTap: () async {
                           final roomId = await getOrCreateRoom(
-                            widget.userId!,
-                            user.userId,
+                            widget.userId!, // current user auth UID
+                            user.userId ?? "", // other user auth UID
                           );
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => DetailScreen(
                                 name: user.name,
-                                id: user.userId,
-                                userId: widget.userId,
-                                roomId: roomId,
+                                id: user.userId ?? "", // <-- FIXED
+                                userId: widget.userId, // current logged-in user
+                                roomId: roomId, // chat room id
                               ),
                             ),
                           );
